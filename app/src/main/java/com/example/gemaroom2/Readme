@@ -1,0 +1,41 @@
+1.-Generación clase de las entidades.
+    Definimos Usuario como Entidad
+
+2.-Generación clase de acceso a datos
+    Definimos las interfaces DAO. UsuarioDAO
+
+3.-Creación de la clase de bases de datos
+    Definimos UsuarioDB
+    Configura una base de datos SQLite gestionada por Room:
+
+    Crea una base de datos llamada "usuario-db" que contiene la tabla asociada a la entidad Usuario.
+    Proporciona acceso a la base de datos:
+
+    Los métodos del DAO (UsuarioDAO) permiten realizar operaciones como insertar, actualizar, eliminar y consultar los datos de la tabla.
+    Asegura una única instancia (Singleton):
+
+    DatabaseBuilder evita que se creen múltiples instancias de la base de datos, lo que podría causar inconsistencias o consumir demasiados recursos.
+    Manejo automático del ciclo de vida:
+
+    La base de datos es creada cuando se necesita y persiste mientras la aplicación está en ejecución.
+
+4.-Implementación del repositorio
+
+    La clase UsuarioRepositorio actúa como un intermediario entre la base de datos (manejada por Room) y el resto de la aplicación. Implementa el patrón de diseño Repositorio, que abstrae el acceso a los datos y permite a otras partes de la aplicación interactuar con la base de datos sin conocer los detalles de su implementación.
+
+5. Accediendo a la base de datos desde código
+
+    debemos modificar el acceso al repositorio teniendo en cuenta
+    que debemos hacerlo en bloques de corrutina. Así como
+    modificar las respuestas mediante observadores a los LiveData
+
+    Dado que el ViewModel interactuará con el repositorio, este incorporará
+    nuevos LiveData para comunicarse con la interfaz y notificar posibles cambios
+
+6.- Para acceder al acceso del repositorio se creará una referncia a este
+    val repositorio = UsuarioRepositorio.getInstance(application.applicationContext)
+
+7.-añade esta línea. Para usar las funciones de coroutine con Room, necesitas agregar la dependencia room-ktx. Esto resolverá el error que te aparece al intentar usar coroutines con Room.
+    implementation("androidx.room:room-ktx:2.5.2")
+    La dependencia androidx.room:room-ktx:2.5.2 se utiliza para integrar Room con las Kotlin Coroutines, simplificando las operaciones asíncronas relacionadas con la base de datos. Proporciona extensiones (KTX) diseñadas para hacer más idiomático el uso de Room en proyectos Kotlin.
+
