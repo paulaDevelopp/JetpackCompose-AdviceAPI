@@ -1,6 +1,5 @@
-package com.example.gemaroom
+package com.example.gemaroom2.data
 
-import androidx.lifecycle.LiveData
 import androidx.room.*
 
 /*Clase para acceso a datos*/
@@ -14,18 +13,12 @@ Esto asegura que las operaciones de la base de datos no bloqueen el hilo princip
  */
 @Dao
 interface UsuarioDAO {
-    //Obtener la lista de usuarios
-    @Query("SELECT * FROM Usuario")
-    fun getAll(): LiveData<List<Usuario>>
+    @Query("SELECT * FROM Usuario WHERE correo = :correo")
+    suspend fun getUsuarioByCorreo(correo: String): Usuario?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addUsuario(usu: Usuario)
+    suspend fun addUsuario(usuario: Usuario)
 
-    //Actualiza un usuario
     @Update
-    suspend fun updateUsuario(usu: Usuario)
-
-    //Elimina un usuario
-    @Delete
-    suspend fun deleteUsuario(usu: Usuario):Int
+    suspend fun updateUsuario(usuario: Usuario)
 }
