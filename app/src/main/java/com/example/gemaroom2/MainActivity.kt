@@ -1,5 +1,6 @@
 package com.example.gemaroom2
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
@@ -28,6 +29,30 @@ import com.example.gemaroom2.data.Usuario
 import com.example.gemaroom2.data.UsuarioRepositorio
 import kotlinx.coroutines.launch
 import java.util.*
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import androidx.compose.foundation.background
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TopAppBar
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,7 +70,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavHostController) {
     val context = LocalContext.current
@@ -53,28 +78,59 @@ fun LoginScreen(navController: NavHostController) {
     val correo = remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize() // Ocupa toda la pantalla
+            .background(Color(0xFFADD8E6)) // Fondo azul clarito
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontal
+        verticalArrangement = Arrangement.Center // Centrado vertical
+    ) {
         Text("Ingrese su correo:", style = MaterialTheme.typography.headlineMedium)
-        BasicTextField(value = correo.value, onValueChange = { correo.value = it }, modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Cuadro con un placeholder para el correo
+        TextField(
+            value = correo.value,
+            onValueChange = { correo.value = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(MaterialTheme.colorScheme.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+            placeholder = { Text("Correo") }, // Placeholder en el cuadro de texto
+            singleLine = true, // Para que sea solo una línea
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            coroutineScope.launch {
-                val user = usuarioRepo.getUsuarioByCorreo(correo.value)
-                if (user == null) {
-                    navController.navigate("register")
-                } else {
-                    user.contadorAccesos++
-                    user.fechaUltimoAcceso = Date()
-                    usuarioRepo.updateUsuario(user)
-                    navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    val user = usuarioRepo.getUsuarioByCorreo(correo.value)
+                    if (user == null) {
+                        navController.navigate("register")
+                    } else {
+                        user.contadorAccesos++
+                        user.fechaUltimoAcceso = Date()
+                        usuarioRepo.updateUsuario(user)
+                        navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+                    }
                 }
-            }
-        }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
             Text("Ingresar")
         }
     }
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(navController: NavHostController) {
     val context = LocalContext.current
@@ -84,33 +140,82 @@ fun RegisterScreen(navController: NavHostController) {
     val contadorAc = remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("Ingrese su nombre:", style = MaterialTheme.typography.headlineMedium)
-        BasicTextField(value = nombre.value, onValueChange = { nombre.value = it }, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Ingrese su correo:", style = MaterialTheme.typography.headlineMedium)
-        BasicTextField(value = correo.value, onValueChange = { correo.value = it }, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = {
-            if (nombre.value.isNotEmpty() && correo.value.isNotEmpty()) {
-                coroutineScope.launch {
-                    val nuevoContador = contadorAc.value + 1
-                    contadorAc.value = nuevoContador
 
-                    usuarioRepo.addUsuario(
-                        Usuario(
-                            nombre = nombre.value,
-                            correo = correo.value,
-                            fechaUltimoAcceso = Date(),
-                            contadorAccesos = nuevoContador
+    Column(
+        modifier = Modifier
+            .fillMaxSize() // Ocupa toda la pantalla
+            .background(Color(0xFFADD8E6)) // Fondo azul clarito
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontal
+        verticalArrangement = Arrangement.Center // Centrado vertical
+    ) {
+        Text("Ingrese su nombre:", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Cuadro con un placeholder para el nombre
+        TextField(
+            value = nombre.value,
+            onValueChange = { nombre.value = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(MaterialTheme.colorScheme.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+            placeholder = { Text("Nombre") }, // Placeholder en el cuadro de texto
+            singleLine = true, // Para que sea solo una línea
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Ingrese su correo:", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Cuadro con un placeholder para el correo
+        TextField(
+            value = correo.value,
+            onValueChange = { correo.value = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(MaterialTheme.colorScheme.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+            placeholder = { Text("Correo") }, // Placeholder en el cuadro de texto
+            singleLine = true, // Para que sea solo una línea
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (nombre.value.isNotEmpty() && correo.value.isNotEmpty()) {
+                    coroutineScope.launch {
+                        val nuevoContador = contadorAc.value + 1
+                        contadorAc.value = nuevoContador
+
+                        usuarioRepo.addUsuario(
+                            Usuario(
+                                nombre = nombre.value,
+                                correo = correo.value,
+                                fechaUltimoAcceso = Date(),
+                                contadorAccesos = nuevoContador
+                            )
                         )
-                    )
-                    navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+                        navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+                    }
+                } else {
+                    Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
                 }
-            } else {
-                Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
-            }
-        }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
             Text("Registrar")
         }
     }
@@ -118,6 +223,66 @@ fun RegisterScreen(navController: NavHostController) {
 
 @Composable
 fun WelcomeScreen(navController: NavHostController) {
+    val context = LocalContext.current
+    val handler = remember { Handler(Looper.getMainLooper()) }
+    var isUserListOpened by remember { mutableStateOf(false) }
+
+    // Función para mostrar la notificación
+    fun showNotification() {
+        val notificationManager = NotificationManagerCompat.from(context)
+
+        val notification = NotificationCompat.Builder(context.applicationContext, "user_reminder_channel")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Recordatorio")
+            .setContentText("Puedes consultar la información de la API")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        // Verificar si el permiso para notificaciones está concedido
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationManager.notify(1, notification)
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                context as Activity,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                101
+            )
+        }
+    }
+
+    // Mostrar las notificaciones cada medio segundo mientras el usuario esté en la pantalla
+    DisposableEffect(Unit) {
+        // Crear canal de notificación
+        createNotificationChannel(context)
+
+        // Función para enviar notificaciones periódicas
+        val runnable = object : Runnable {
+            override fun run() {
+                if (!isUserListOpened) {
+                    showNotification()
+                    handler.postDelayed(this, 500) // 500ms = 0.5 segundos
+                }
+            }
+        }
+
+        handler.post(runnable)
+
+        onDispose {
+            handler.removeCallbacksAndMessages(null) // Limpiar el handler cuando se salga de la pantalla
+        }
+    }
+
+    // Detener las notificaciones cuando se haya consultado la API
+    LaunchedEffect(isUserListOpened) {
+        if (isUserListOpened) {
+            handler.removeCallbacksAndMessages(null) // Detener las notificaciones
+        }
+    }
+
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -131,12 +296,31 @@ fun WelcomeScreen(navController: NavHostController) {
                 style = MaterialTheme.typography.headlineMedium
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { navController.navigate("home") }) {
+            Button(onClick = {
+                navController.navigate("home")
+                isUserListOpened = true // El usuario ha consultado la API
+            }) {
                 Text("Obtener lista")
             }
         }
     }
 }
+
+fun createNotificationChannel(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            "user_reminder_channel", // ID del canal
+            "User Reminder", // Nombre del canal
+            NotificationManager.IMPORTANCE_HIGH // Importancia de las notificaciones
+        ).apply {
+            description = "Canal para recordar a los usuarios" // Descripción del canal
+        }
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+    }
+}
+
 @Composable
 fun UserList(users: List<User>) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
