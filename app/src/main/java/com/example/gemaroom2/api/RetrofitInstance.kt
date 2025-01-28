@@ -1,9 +1,10 @@
 package com.example.gemaroom2.api
+
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
-    private const val BASE_URL = "https://jsonplaceholder.typicode.com/"
+    private const val BASE_URL = "https://api.adviceslip.com/"
 
     val api: ApiService by lazy {
         Retrofit.Builder()
@@ -13,4 +14,3 @@ object RetrofitInstance {
             .create(ApiService::class.java)
     }
 }
-

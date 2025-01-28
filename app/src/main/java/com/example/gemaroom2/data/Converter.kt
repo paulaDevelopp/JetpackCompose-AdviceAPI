@@ -1,6 +1,7 @@
 package com.example.gemaroom2.data
 
 import androidx.room.TypeConverter
+import java.text.SimpleDateFormat
 import java.util.*
 
 class Converter {
@@ -14,5 +15,5 @@ class Converter {
     fun dateToTimestamp(date: Date?): Long? {
         return date?.time
     }
-}
 
+}

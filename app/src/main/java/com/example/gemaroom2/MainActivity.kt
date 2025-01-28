@@ -1,6 +1,5 @@
 package com.example.gemaroom2
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
@@ -8,8 +7,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.ui.Alignment
@@ -23,8 +20,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.gemaroom2.api.User
-import com.example.gemaroom2.api.UserViewModel
+import com.example.gemaroom2.api.AdviceViewModel
 import com.example.gemaroom2.data.Usuario
 import com.example.gemaroom2.data.UsuarioRepositorio
 import kotlinx.coroutines.launch
@@ -34,6 +30,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.Image
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -49,9 +46,19 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import com.example.gemaroom2.api.Advice
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.layout.ContentScale
+import java.text.SimpleDateFormat
 
 
 class MainActivity : ComponentActivity() {
@@ -65,11 +72,16 @@ class MainActivity : ComponentActivity() {
                 composable("login") { LoginScreen(navController) }
                 composable("register") { RegisterScreen(navController) }
                 composable("welcome") { WelcomeScreen(navController) } // Nueva pantalla de bienvenida
-                composable("home") { HomeScreen(UserViewModel(), navController ) }
+                composable("home") { HomeScreen(AdviceViewModel(), navController ) }
             }
         }
     }
 }
+fun isEmailValid(email: String): Boolean {
+    val emailRegex = "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}".toRegex()
+    return email.matches(emailRegex)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavHostController) {
@@ -78,55 +90,81 @@ fun LoginScreen(navController: NavHostController) {
     val correo = remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize() // Ocupa toda la pantalla
-            .background(Color(0xFFADD8E6)) // Fondo azul clarito
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontal
-        verticalArrangement = Arrangement.Center // Centrado vertical
-    ) {
-        Text("Ingrese su correo:", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(8.dp))
+        // Scaffold para contener la UI
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "ConsejosVendoQueParaMiNoTengo",
+                            style = MaterialTheme.typography.titleLarge.copy(color = Color.White)
+                        )
+                    },
+                    colors = TopAppBarDefaults.smallTopAppBarColors(
+                        containerColor = Color(0xFF6200EE) // Color de fondo del TopAppBar
+                    ),
+                    modifier = Modifier.shadow(4.dp, shape = MaterialTheme.shapes.small)
+                )
+            },
+            content = { padding ->
+                // Contenido principal dentro del Scaffold
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize() // Esto asegura que la columna ocupe toda la pantalla
+                        .background(color = Color.LightGray)
+                        .padding(16.dp)
+                        .padding(padding), // Padding de Scaffold
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text("Ingrese su correo:", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
 
-        // Cuadro con un placeholder para el correo
-        TextField(
-            value = correo.value,
-            onValueChange = { correo.value = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .background(MaterialTheme.colorScheme.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
-            placeholder = { Text("Correo") }, // Placeholder en el cuadro de texto
-            singleLine = true, // Para que sea solo una línea
-            colors = TextFieldDefaults.textFieldColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-        )
+                    // Cuadro con un placeholder para el correo
+                    TextField(
+                        value = correo.value,
+                        onValueChange = { correo.value = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .background(MaterialTheme.colorScheme.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+                        placeholder = { Text("Correo") },
+                        singleLine = true,
+                        colors = TextFieldDefaults.textFieldColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    )
 
-        Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = {
-                coroutineScope.launch {
-                    val user = usuarioRepo.getUsuarioByCorreo(correo.value)
-                    if (user == null) {
-                        navController.navigate("register")
-                    } else {
-                        user.contadorAccesos++
-                        user.fechaUltimoAcceso = Date()
-                        usuarioRepo.updateUsuario(user)
-                        navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+                    // Botón de ingreso
+                    Button(
+                        onClick = {
+                            if (isEmailValid(correo.value)) {
+                                coroutineScope.launch {
+                                    val user = usuarioRepo.getUsuarioByCorreo(correo.value)
+                                    if (user == null) {
+                                        navController.navigate("register")
+                                    } else {
+                                        user.contadorAccesos++
+                                        user.fechaUltimoAcceso = Date()
+                                        usuarioRepo.updateUsuario(user)
+                                        navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+                                    }
+                                }
+                            } else {
+                                Toast.makeText(context, "Por favor, ingrese un correo válido", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("Ingresar")
                     }
                 }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-        ) {
-            Text("Ingresar")
-        }
-    }
+            }
+        )
 }
 
 
@@ -144,7 +182,7 @@ fun RegisterScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize() // Ocupa toda la pantalla
-            .background(Color(0xFFADD8E6)) // Fondo azul clarito
+            .background(color = Color.LightGray)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontal
         verticalArrangement = Arrangement.Center // Centrado vertical
@@ -196,19 +234,26 @@ fun RegisterScreen(navController: NavHostController) {
         Button(
             onClick = {
                 if (nombre.value.isNotEmpty() && correo.value.isNotEmpty()) {
-                    coroutineScope.launch {
-                        val nuevoContador = contadorAc.value + 1
-                        contadorAc.value = nuevoContador
+                    if (isEmailValid(correo.value)) {
+                        coroutineScope.launch {
+                            // Convertir el nombre a mayúsculas
+                            val nombreMayusculas = nombre.value.toUpperCase(Locale.ROOT)
 
-                        usuarioRepo.addUsuario(
-                            Usuario(
-                                nombre = nombre.value,
-                                correo = correo.value,
-                                fechaUltimoAcceso = Date(),
-                                contadorAccesos = nuevoContador
+                            val nuevoContador = contadorAc.value + 1
+                            contadorAc.value = nuevoContador
+
+                            usuarioRepo.addUsuario(
+                                Usuario(
+                                    nombre = nombreMayusculas,
+                                    correo = correo.value,
+                                    fechaUltimoAcceso = Date(),
+                                    contadorAccesos = nuevoContador
+                                )
                             )
-                        )
-                        navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+                            navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+                        }
+                    } else {
+                        Toast.makeText(context, "Por favor, ingrese un correo válido", Toast.LENGTH_SHORT).show()
                     }
                 } else {
                     Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
@@ -218,85 +263,89 @@ fun RegisterScreen(navController: NavHostController) {
         ) {
             Text("Registrar")
         }
+
     }
 }
-
 @Composable
 fun WelcomeScreen(navController: NavHostController) {
     val context = LocalContext.current
     val handler = remember { Handler(Looper.getMainLooper()) }
     var isUserListOpened by remember { mutableStateOf(false) }
+    var isWorkerRunning by remember { mutableStateOf(false) }
 
-    // Función para mostrar la notificación
-    fun showNotification() {
-        val notificationManager = NotificationManagerCompat.from(context)
-
-        val notification = NotificationCompat.Builder(context.applicationContext, "user_reminder_channel")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Recordatorio")
-            .setContentText("Puedes consultar la información de la API")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
-        // Verificar si el permiso para notificaciones está concedido
-        if (ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            notificationManager.notify(1, notification)
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ActivityCompat.requestPermissions(
-                context as Activity,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                101
-            )
-        }
+    // Función para mostrar el mensaje (Toast)
+    fun showMessage(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
-    // Mostrar las notificaciones cada medio segundo mientras el usuario esté en la pantalla
-    DisposableEffect(Unit) {
-        // Crear canal de notificación
-        createNotificationChannel(context)
+    // Función para iniciar el worker que muestra la hora cada minuto
+    fun startTimeWorker() {
+        if (!isWorkerRunning) {
+            isWorkerRunning = true
 
-        // Función para enviar notificaciones periódicas
-        val runnable = object : Runnable {
-            override fun run() {
-                if (!isUserListOpened) {
-                    showNotification()
-                    handler.postDelayed(this, 500) // 500ms = 0.5 segundos
+            handler.post(object : Runnable {
+                override fun run() {
+                    // Obtener la hora actual
+                    val currentTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+                    showMessage("Son las $currentTime, es hora de consultar la api de consejos!")
+
+                    // Repetir cada minuto
+                    handler.postDelayed(this, 60 * 100)
                 }
-            }
-        }
-
-        handler.post(runnable)
-
-        onDispose {
-            handler.removeCallbacksAndMessages(null) // Limpiar el handler cuando se salga de la pantalla
+            })
         }
     }
 
-    // Detener las notificaciones cuando se haya consultado la API
+    // Función para detener el worker
+    fun stopTimeWorker() {
+        if (isWorkerRunning) {
+            isWorkerRunning = false
+            handler.removeCallbacksAndMessages(null) // Detener todas las tareas pendientes
+        }
+    }
+
+    // Iniciar el worker al cargar la pantalla
+    LaunchedEffect(Unit) {
+        startTimeWorker() // Iniciar el worker al entrar en la pantalla
+    }
+
+    // Detener el worker al navegar a otra pantalla o al abrir la lista
     LaunchedEffect(isUserListOpened) {
         if (isUserListOpened) {
-            handler.removeCallbacksAndMessages(null) // Detener las notificaciones
+            stopTimeWorker() // Detener el worker cuando el usuario ha consultado la API
         }
     }
 
     Scaffold { padding ->
         Column(
             modifier = Modifier
+                .background(color = Color.LightGray)
                 .padding(padding)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Bienvenido! ¿Qué quieres hacer?",
-                style = MaterialTheme.typography.headlineMedium
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Bienvenido!",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontStyle = FontStyle.Italic, // Cursiva
+                        color = Color.Black // Color del texto
+                    ),
+                    textAlign = TextAlign.Center, // Centrado del texto
+                    modifier = Modifier.fillMaxWidth() // Asegura que ocupe todo el ancho disponible
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
+
             Button(onClick = {
+                // Detener el worker cuando se presiona el botón "Obtener lista"
+                stopTimeWorker()
+
+                // Navegar a la siguiente pantalla
                 navController.navigate("home")
                 isUserListOpened = true // El usuario ha consultado la API
             }) {
@@ -304,58 +353,65 @@ fun WelcomeScreen(navController: NavHostController) {
             }
         }
     }
-}
 
-fun createNotificationChannel(context: Context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(
-            "user_reminder_channel", // ID del canal
-            "User Reminder", // Nombre del canal
-            NotificationManager.IMPORTANCE_HIGH // Importancia de las notificaciones
-        ).apply {
-            description = "Canal para recordar a los usuarios" // Descripción del canal
+    // Detener el worker cuando se salga de la pantalla
+    DisposableEffect(Unit) {
+        onDispose {
+            stopTimeWorker() // Detener el worker al salir de la pantalla
         }
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
     }
 }
 
 @Composable
-fun UserList(users: List<User>) {
+fun AdviceList(advices: List<Advice>) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(users) { user ->
-            UserItem(user)
+        items(advices) { advice ->
+            AdviceItem(advice)
         }
     }
 }
 
 @Composable
-fun UserItem(user: User) {
+fun AdviceItem(advice: Advice) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .background(Color.Yellow, shape = RoundedCornerShape(8.dp))
             .padding(8.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = user.name, style = MaterialTheme.typography.titleMedium)
-            Text(text = user.email, style = MaterialTheme.typography.bodyMedium)
+            Text(text = "Consejo", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = advice.advice, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(userViewModel: UserViewModel = viewModel(), navController: NavHostController) {
-    val users by userViewModel.users.collectAsState()
-    val context = LocalContext.current // Obtén el contexto de la aplicación
+fun HomeScreen(
+    adviceViewModel: AdviceViewModel = viewModel(),
+    navController: NavHostController
+) {
+    val advices by adviceViewModel.advices.collectAsState(initial = emptyList()) // Escucha la lista de consejos
+    val context = LocalContext.current
     var expanded by remember { mutableStateOf(false) }
+    val isLoading = advices.isEmpty() // Determina si los consejos aún se están cargando
+
+    // Asegúrate de que el ViewModel haga la llamada para cargar los consejos si no se han cargado aún
+    LaunchedEffect(Unit) {
+        if (advices.isEmpty()) {
+            adviceViewModel.fetchAdvices(10) // Esto debería ser el método para cargar los consejos
+        }
+    }
+
+
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Lista de Usuarios") },
+                title = { Text("Lista de Consejos") },
                 actions = {
                     IconButton(onClick = { expanded = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Más opciones")
@@ -388,7 +444,12 @@ fun HomeScreen(userViewModel: UserViewModel = viewModel(), navController: NavHos
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            UserList(users)
+            // Mostrar un mensaje mientras se cargan los consejos
+            if (isLoading) {
+                Text("Cargando consejos...")
+            } else {
+                AdviceList(advices) // Muestra la lista de consejos una vez cargados
+            }
         }
     }
 }

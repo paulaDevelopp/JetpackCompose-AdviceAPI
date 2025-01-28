@@ -14,5 +14,5 @@ data class Usuario(
     val nombre: String,
     val correo: String,
     var contadorAccesos: Int = 0,
-    var fechaUltimoAcceso: Date // Room necesita un TypeConverter para Date
+    var fechaUltimoAcceso: Date
 ) : Serializable
