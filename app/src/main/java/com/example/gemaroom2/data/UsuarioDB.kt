@@ -8,6 +8,7 @@ import androidx.room.RoomDatabase
 /*
 Este código define y configura una base de datos Room para una aplicación Android. Aquí hay una explicación detallada de las partes clave:
  */
+
 @Database(entities = [Usuario::class], version = 2)
 abstract class UsuarioDB : RoomDatabase() {
     abstract fun usuarioDao(): UsuarioDAO

@@ -1,5 +1,6 @@
 package com.example.gemaroom2
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
@@ -25,58 +26,58 @@ import com.example.gemaroom2.data.Usuario
 import com.example.gemaroom2.data.UsuarioRepositorio
 import kotlinx.coroutines.launch
 import java.util.*
-import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.content.pm.PackageManager
-import android.media.Image
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.TopAppBar
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import com.example.gemaroom2.api.Advice
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.text.BasicTextField
 import java.text.SimpleDateFormat
-
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
+            val usuario = remember { mutableStateOf(Usuario(
+                    correo = "user@domain.com",
+                fechaUltimoAcceso = Date(), // You can get this from the current time
+                nombre = "User Name")) } // Default empty Usuario or provide initial data
 
-            // NavHost con diferentes pantallas
+            // NavHost with different screens
             NavHost(navController, startDestination = "login") {
                 composable("login") { LoginScreen(navController) }
                 composable("register") { RegisterScreen(navController) }
-                composable("welcome") { WelcomeScreen(navController) } // Nueva pantalla de bienvenida
-                composable("home") { HomeScreen(AdviceViewModel(), navController ) }
+                composable("welcome") {
+                    // Pass 'usuario' to WelcomeScreen and ensure it's not null
+                    WelcomeScreen(navController, usuario.value)
+                }
+                composable("home") { HomeScreen(AdviceViewModel(), navController) }
             }
         }
     }
 }
+
 fun isEmailValid(email: String): Boolean {
     val emailRegex = "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}".toRegex()
     return email.matches(emailRegex)
@@ -88,186 +89,281 @@ fun LoginScreen(navController: NavHostController) {
     val context = LocalContext.current
     val usuarioRepo = remember { UsuarioRepositorio.getInstance(context) }
     val correo = remember { mutableStateOf("") }
+    val nombre = remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
-        // Scaffold para contener la UI
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "ConsejosVendoQueParaMiNoTengo",
-                            style = MaterialTheme.typography.titleLarge.copy(color = Color.White)
-                        )
-                    },
-                    colors = TopAppBarDefaults.smallTopAppBarColors(
-                        containerColor = Color(0xFF6200EE) // Color de fondo del TopAppBar
-                    ),
-                    modifier = Modifier.shadow(4.dp, shape = MaterialTheme.shapes.small)
+    // Cargar la imagen de fondo
+    val fondo = painterResource(id = R.drawable.fondo)
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("ConsejosVendoQueParaMiNoTengo", style = MaterialTheme.typography.titleLarge.copy(color = Color.White)) },
+                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = Color(0xFF2F6B3C))
+            )
+        },
+        content = { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                // Imagen de fondo
+                Image(
+                    painter = fondo,
+                    contentDescription = "Fondo",
+                    modifier = Modifier.fillMaxSize()
                 )
-            },
-            content = { padding ->
-                // Contenido principal dentro del Scaffold
+
+                // El contenido encima de la imagen
                 Column(
                     modifier = Modifier
-                        .fillMaxSize() // Esto asegura que la columna ocupe toda la pantalla
-                        .background(color = Color.LightGray)
+                        .fillMaxSize()
                         .padding(16.dp)
-                        .padding(padding), // Padding de Scaffold
+                        .padding(padding),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text("Ingrese su correo:", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    // Cuadro de fondo para el texto de "Nombre de usuario"
+                    Box(
+                        modifier = Modifier
 
-                    // Cuadro con un placeholder para el correo
-                    TextField(
+                            .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            "Nombre de usuario:",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, color = Color(0xFF00008B))
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    // Campo de texto para el nombre
+                    BasicTextField(
+                        value = nombre.value,
+                        onValueChange = { nombre.value = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .border(1.dp, Color.Gray, shape = RoundedCornerShape(8.dp))
+                            .background(Color(0xFFFFF8B5), shape = RoundedCornerShape(8.dp)),
+                        singleLine = true,
+                        decorationBox = { innerTextField ->
+                            Box(modifier = Modifier.padding(16.dp)) { innerTextField() }
+                        }
+
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Cuadro de fondo para el texto de "Correo electrónico"
+                    Box(
+                        modifier = Modifier
+
+                            .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
+                            .padding(8.dp)
+                    ) {
+                        Text(
+                            "Correo electrónico:",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, color = Color(0xFF00008B))
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    // Campo de texto para el correo
+                    BasicTextField(
                         value = correo.value,
                         onValueChange = { correo.value = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp)
-                            .background(MaterialTheme.colorScheme.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
-                        placeholder = { Text("Correo") },
+                            .border(1.dp, Color.Gray, shape = RoundedCornerShape(8.dp))
+                            .background(Color(0xFFFFF8B5), shape = RoundedCornerShape(8.dp)),
                         singleLine = true,
-                        colors = TextFieldDefaults.textFieldColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                        decorationBox = { innerTextField ->
+                            Box(modifier = Modifier.padding(16.dp)) { innerTextField() }
+                        },
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Botón de ingreso
+                    // Botón de "Acceder"
                     Button(
                         onClick = {
-                            if (isEmailValid(correo.value)) {
-                                coroutineScope.launch {
-                                    val user = usuarioRepo.getUsuarioByCorreo(correo.value)
-                                    if (user == null) {
-                                        navController.navigate("register")
-                                    } else {
-                                        user.contadorAccesos++
-                                        user.fechaUltimoAcceso = Date()
-                                        usuarioRepo.updateUsuario(user)
-                                        navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+                            if (correo.value.isNotEmpty() && nombre.value.isNotEmpty()) {
+                                if (correo.value.contains("@")) {
+                                    coroutineScope.launch {
+                                        val user = usuarioRepo.getUsuarioByCorreo(correo.value)
+                                        if (user == null) {
+                                            navController.navigate("register")
+                                            Toast.makeText(context, "Vaya, parece que no está registrado aún.", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            user.contadorAccesos++
+                                            user.fechaUltimoAcceso = Date()
+                                            usuarioRepo.updateUsuario(user)
+                                            navController.navigate("welcome")
+                                        }
                                     }
+                                } else {
+                                    Toast.makeText(context, "Correo inválido", Toast.LENGTH_SHORT).show()
                                 }
                             } else {
-                                Toast.makeText(context, "Por favor, ingrese un correo válido", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFADD8E6)),
                     ) {
-                        Text("Ingresar")
+                        Text("Acceder", style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp, color = Color(0xFF00008B)))
                     }
+
+                    Button(
+                        onClick = {
+                            navController.navigate("register")
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFADD8E6))
+                    ) {
+                        Text("Registrar", style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp, color = Color(0xFF00008B)))
+                    }
+
                 }
             }
-        )
+        }
+    )
 }
 
-
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(navController: NavHostController) {
     val context = LocalContext.current
     val usuarioRepo = remember { UsuarioRepositorio.getInstance(context) }
-    val correo = remember { mutableStateOf("") }
+    val correo = remember { mutableStateOf("") } // Guardar el correo
     val nombre = remember { mutableStateOf("") }
     val contadorAc = remember { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
 
+    // Cargar la imagen de fondo
+    val fondo = painterResource(id = R.drawable.fondo)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize() // Ocupa toda la pantalla
-            .background(color = Color.LightGray)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontal
-        verticalArrangement = Arrangement.Center // Centrado vertical
-    ) {
-        Text("Ingrese su nombre:", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Cuadro con un placeholder para el nombre
-        TextField(
-            value = nombre.value,
-            onValueChange = { nombre.value = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .background(MaterialTheme.colorScheme.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
-            placeholder = { Text("Nombre") }, // Placeholder en el cuadro de texto
-            singleLine = true, // Para que sea solo una línea
-            colors = TextFieldDefaults.textFieldColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Registro", style = MaterialTheme.typography.titleLarge.copy(color = Color.White)) },
+                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = Color(0xFF2F6B3C))
             )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text("Ingrese su correo:", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Cuadro con un placeholder para el correo
-        TextField(
-            value = correo.value,
-            onValueChange = { correo.value = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .background(MaterialTheme.colorScheme.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
-            placeholder = { Text("Correo") }, // Placeholder en el cuadro de texto
-            singleLine = true, // Para que sea solo una línea
-            colors = TextFieldDefaults.textFieldColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                if (nombre.value.isNotEmpty() && correo.value.isNotEmpty()) {
-                    if (isEmailValid(correo.value)) {
-                        coroutineScope.launch {
-                            // Convertir el nombre a mayúsculas
-                            val nombreMayusculas = nombre.value.toUpperCase(Locale.ROOT)
-
-                            val nuevoContador = contadorAc.value + 1
-                            contadorAc.value = nuevoContador
-
-                            usuarioRepo.addUsuario(
-                                Usuario(
-                                    nombre = nombreMayusculas,
-                                    correo = correo.value,
-                                    fechaUltimoAcceso = Date(),
-                                    contadorAccesos = nuevoContador
-                                )
-                            )
-                            navController.navigate("welcome") // Navegar a la pantalla de bienvenida
-                        }
-                    } else {
-                        Toast.makeText(context, "Por favor, ingrese un correo válido", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
-                }
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-        ) {
-            Text("Registrar")
         }
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Imagen de fondo
+            Image(
+                painter = fondo,
+                contentDescription = "Fondo",
+                modifier = Modifier.fillMaxSize()
+            )
 
+            // El contenido encima de la imagen
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Cuadro de fondo para el texto de "Nombre"
+                Box(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        "Ingrese el nombre de usuario:",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, color = Color(0xFF00008B))
+                    )
+                }
+                Spacer(modifier = Modifier.height(5.dp))
+
+                // Campo de texto para el nombre
+                BasicTextField(
+                    value = nombre.value,
+                    onValueChange = { nombre.value = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .border(1.dp, Color.Gray, shape = RoundedCornerShape(8.dp))
+                        .background(Color(0xFFFFF8B5), shape = RoundedCornerShape(8.dp)),
+                    singleLine = true,
+                    decorationBox = { innerTextField -> Box(modifier = Modifier.padding(16.dp)) { innerTextField() } }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Cuadro de fondo para el texto de "Correo"
+                Box(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        "Ingrese el correo electrónico:",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, color = Color(0xFF00008B))
+                    )
+                }
+                Spacer(modifier = Modifier.height(5.dp))
+
+                // Campo de texto para el correo - PRE-LLENADO con el correo recibido
+                BasicTextField(
+                    value = correo.value,
+                    onValueChange = { correo.value = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .border(1.dp, Color.Gray, shape = RoundedCornerShape(8.dp))
+                        .background(Color(0xFFFFF8B5), shape = RoundedCornerShape(8.dp)),
+                    singleLine = true,
+                    decorationBox = { innerTextField -> Box(modifier = Modifier.padding(16.dp)) { innerTextField() } }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Botón de "Registrar"
+                Button(
+                    onClick = {
+                        if (nombre.value.isNotEmpty() && correo.value.isNotEmpty()) {
+                            if (isEmailValid(correo.value)) {
+                                coroutineScope.launch {
+                                    // Convertir el nombre a mayúsculas
+                                    val nombreMayusculas = nombre.value.toUpperCase(Locale.ROOT)
+
+                                    val nuevoContador = contadorAc.value + 1
+                                    contadorAc.value = nuevoContador
+
+                                    usuarioRepo.addUsuario(
+                                        Usuario(
+                                            nombre = nombreMayusculas,
+                                            correo = correo.value,
+                                            fechaUltimoAcceso = Date(),
+                                            contadorAccesos = nuevoContador
+                                        )
+                                    )
+                                    navController.navigate("welcome") // Navegar a la pantalla de bienvenida
+                                }
+                            } else {
+                                Toast.makeText(context, "Por favor, ingrese un correo válido", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(context, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFADD8E6)),
+                ) {
+                    Text("Registrar", style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp, color = Color(0xFF00008B)))
+                }
+            }
+        }
     }
-}
-@Composable
-fun WelcomeScreen(navController: NavHostController) {
+}@Composable
+fun WelcomeScreen(navController: NavHostController, usuario: Usuario?) {
     val context = LocalContext.current
     val handler = remember { Handler(Looper.getMainLooper()) }
     var isUserListOpened by remember { mutableStateOf(false) }
@@ -290,7 +386,7 @@ fun WelcomeScreen(navController: NavHostController) {
                     showMessage("Son las $currentTime, es hora de consultar la api de consejos!")
 
                     // Repetir cada minuto
-                    handler.postDelayed(this, 60 * 100)
+                    handler.postDelayed(this, 6000)
                 }
             })
         }
@@ -316,40 +412,71 @@ fun WelcomeScreen(navController: NavHostController) {
         }
     }
 
+    // Crear un formateador para la fecha en formato "yyyy-MM-dd"
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+
+    // Formatear la fecha, asegurando que 'usuario' no sea null
+    val formattedDate = usuario?.fechaUltimoAcceso?.let { dateFormat.format(it) } ?: "No disponible"
+
+    // Cargar la imagen de fondo
+    val fondo = painterResource(id = R.drawable.fondoadvice)
+
+    // El contenido encima de la imagen
     Scaffold { padding ->
-        Column(
-            modifier = Modifier
-                .background(color = Color.LightGray)
-                .padding(padding)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth()
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Imagen de fondo
+            Image(
+                painter = fondo,
+                contentDescription = "Fondo",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .align(Alignment.Center)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Bienvenido!",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontStyle = FontStyle.Italic, // Cursiva
-                        color = Color.Black // Color del texto
-                    ),
-                    textAlign = TextAlign.Center, // Centrado del texto
-                    modifier = Modifier.fillMaxWidth() // Asegura que ocupe todo el ancho disponible
+                    text = "Fecha de último acceso: $formattedDate",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Título de la pantalla
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Bienvenido!",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontStyle = FontStyle.Italic,
+                            color = Color.Black
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
-            Button(onClick = {
-                // Detener el worker cuando se presiona el botón "Obtener lista"
-                stopTimeWorker()
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Navegar a la siguiente pantalla
-                navController.navigate("home")
-                isUserListOpened = true // El usuario ha consultado la API
-            }) {
-                Text("Obtener lista")
+                // Botón para obtener la lista
+                Button(onClick = {
+                    stopTimeWorker() // Detener el worker
+                    navController.navigate("home") // Navegar a la siguiente pantalla
+                    isUserListOpened = true // El usuario ha consultado la API
+                }) {
+                    Text("Obtener consejos")
+                }
             }
         }
     }
@@ -381,9 +508,8 @@ fun AdviceItem(advice: Advice) {
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Consejo", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = advice.advice, style = MaterialTheme.typography.bodyMedium)
+            Text(text = advice.advice, style = MaterialTheme.typography.titleLarge)
         }
     }
 }
