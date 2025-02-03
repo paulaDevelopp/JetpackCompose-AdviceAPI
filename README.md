@@ -18,7 +18,7 @@ Una vez autenticado, el usuario puede consultar datos, que en este caso son cons
 ### 🔹 Consulta de datos de API (Retrofit)  
 - Se conecta a la API pública [API ADVICE](https://api.adviceslip.com/).  
 - Se obtiene una lista de **10 consejos**.  
-- La consulta se activa al presionar un botón tras el inicio de sesión.  
+- La consulta se activa al presionar el botón 'Obtener consjeos' en la pantalla principal.  
 
 ### 🔹 Notificaciones  
 - Se muestra una **notificación al acceder a la app**.  
@@ -44,14 +44,16 @@ Una vez autenticado, el usuario puede consultar datos, que en este caso son cons
   - **`com.example.gemaroom2/`**  
     - **`api/`** 🌐 _Módulo para la gestión de API con Retrofit_  
      
-      - 📄 `ApiService.kt` _(Interfaz Retrofit para la API)_  
-      - 📄 `RetrofitInstance.kt` _(Configuración de Retrofit)_  
+      - 📄 `ApiService` _(Interfaz Retrofit para la API)_  
+      - 📄 `RetrofitInstance` _(Configuración de Retrofit)_
+      - 📄 `Advice` _(Representa el JSON recibido)_
+      - 📄 `AdviceViewModel` _(Obtiene los datos y los expone en la UI)_
     - **`data/`** 💾 _Módulo de base de datos con Room_  
-      - 📄 `Converter.kt` _(Conversores para Room)_  
-      - 📄 `Usuario.kt` _(Modelo de datos del usuario)_  
-      - 📄 `UsuarioDAO.kt` _(DAO para operaciones en la base de datos)_  
-      - 📄 `UsuarioDB.kt` _(Base de datos Room)_  
-      - 📄 `UsuarioRepositorio.kt` _(Repositorio de usuario)_   
+      - 📄 `Converter` _(Conversores para Room)_  
+      - 📄 `Usuario` _(Modelo de datos del usuario)_  
+      - 📄 `UsuarioDAO` _(DAO para operaciones en la base de datos)_  
+      - 📄 `UsuarioDB` _(Base de datos Room)_  
+      - 📄 `UsuarioRepositorio` _(Repositorio de usuario)_   
   - 📄 `MainActivity.kt` _(Contiene toda la lógica de navegación de la app)_  
 
 ---
@@ -61,14 +63,16 @@ Una vez autenticado, el usuario puede consultar datos, que en este caso son cons
 ### 📝 **Inicio de Sesión (`LoginScreen`)**  
 - Permite que el usuario ingrese su **nombre** y **correo electrónico**.  
 - **Validaciones**:  
-  - Se verifica que el nombre y el correo no estén vacíos.  
-  - Se comprueba que el correo existe en la bbdd, si no, se le redirige a la pantalla de Registro.  
+  - Se verifica que el nombre y el correo no estén vacíos.
+  - Se valida la forma del correo electrónico.
+  - Se comprueba que el correo existe en la bbdd, si no, se le redirige a la pantalla de     Registro.  
 - Al iniciar sesión:    
   - Se actualiza el **contador de accesos** del usuario y la **fecha del último acceso**.  
   - Se navega a la pantalla de bienvenida (`WelcomeScreen`).  
 - **Interfaz**:  
   - Uso de `BasicTextField` con un diseño personalizado.  
-  - Botón de acceso con validaciones previas.  
+  - Botón de acceso.
+  - Toast con las validaciones con mensajes como 'Completa todos los campos'.  
   - Botón de registarse para ir directamente a la pantalla de registro.
 
 ---
@@ -79,7 +83,7 @@ Una vez autenticado, el usuario puede consultar datos, que en este caso son cons
   - Se valida que el correo tenga un formato válido.  
 - Al registrarse:  
   - Se almacena el usuario en la base de datos **Room**.   
-  - Se actualiza el **contador de accesos** del usuario, en este caso a 1, ya que es la 1ª vez que accede y la **fecha del último acceso**.  
+  - Se actualiza el **contador de accesos** del usuario, en este caso a 1, ya que es la 1ª vez que accede, y la **fecha del último acceso**.  
   - Se navega a la pantalla de bienvenida (`WelcomeScreen`).  
 - **Interfaz**:  
   - Uso de `BasicTextField` con un diseño personalizado.  
@@ -95,7 +99,7 @@ Una vez autenticado, el usuario puede consultar datos, que en este caso son cons
   - Se detiene si el usuario consulta la API de consejos.  
   - Se reanuda si el usuario vuelve a esta página. 
 
-- Botón para **obtener consejos**, que navega a la pantalla principal (`HomeScreen`).  
+- Botón para **obtener consejos**, que navega a (`HomeScreen`).  
 
 ---
 
@@ -118,7 +122,7 @@ Una vez autenticado, el usuario puede consultar datos, que en este caso son cons
 ## 📡 3. Integración de la API con Retrofit  
 - Se decisió usar la API [API ADVICE](https://api.adviceslip.com/).  
 - Se implementó un `ViewModel` para manejar los datos de la API de forma reactiva.  
-- Se empleó un `Repository` ya que, sin un Repository, el ViewModel tendría que acceder directamente a la API o la base de datos, lo que lo haría dependiente de esas implementaciones. Esto genera código difícil de cambiar si, por ejemplo, se quiere cambiar de una API a otra.
+- Se empleó un `Retrofit` porque esácil de usar: define una interfaz con @GET, @POST, etc. y ya puedes hacer llamadas a una API. Convierte JSON a objetos Kotlin/Java automáticamente con GsonConverterFactory. Y soporta llamadas asíncronas con Call y Coroutines.
 
 ## 🔔 4. Implementación de Notificaciones  
 - Se implementaron notificaciones locales para recordar al usuario que puede consultar los datos de la API.  
@@ -126,7 +130,7 @@ Una vez autenticado, el usuario puede consultar datos, que en este caso son cons
 - Se agregó una condición para detener las notificaciones una vez que el usuario realiza la consulta a la API.  
 
 ## 🚀 6. Decisiones sobre la Experiencia de Usuario (UX)  
-- Se implementó una interfaz intuitiva con Material 3 y colores accesibles.  
+- Se implementó una interfaz intuitiva con Material 3 y colores pastel.  
 - Se agregaron mensajes `Toast` para dar retroalimentación al usuario sobre validaciones. 
 - Se usaron `BasicTextField` con bordes redondeados para mejorar la estética.  
 - Se incluyó validación de correo electrónico para evitar entradas inválidas.  
@@ -151,12 +155,11 @@ implementation ("androidx.navigation:navigation-compose:2.5.3")
 🔍 Búsquedas realizadas
 - Room para almacenamiento local. Se investigó cómo crear una base de datos local para almacenar el usuario.
 Se utilizó Room por su integración con Jetpack y su facilidad de uso.
--  Retrofit para API REST. Se analizó la mejor forma de realizar peticiones HTTP en Android.
-Se eligió Retrofit por su flexibilidad, facilidad de manejo y compatibilidad con Gson.
+-  Retrofit para API REST por su flexibilidad, facilidad de manejo y compatibilidad con Gson.
 -  Notificaciones y hilos en segundo plano. Se investigaron métodos para mostrar notificaciones periódicas.
 Se implementó un Runnable con Handler para gestionar los recordatorios.
-- Navegación con NavController. Se revisaron formas modernas de navegación en Jetpack Compose.
-Se optó por NavController para gestionar transiciones entre pantallas de manera eficiente.
+- Navegación con NavController.
+Se eligió NavController para gestionar cambios entre pantallas de manera eficiente.
 ---
 ---
 # 📜 Commits
